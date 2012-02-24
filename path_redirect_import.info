@@ -1,5 +1,4 @@
-; $Id$
-name = 	Path redirect import
-description = Provides the ability to import path for Path Redirect
-core = 6.x
-dependencies[] = path_redirect
+name = Redirect Import
+description = Provides the ability to import redirects for the Redirect module
+core = 7.x
+dependencies[] = redirect
