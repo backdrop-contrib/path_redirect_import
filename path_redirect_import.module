@@ -11,7 +11,7 @@
 function path_redirect_import_menu() {
   $items['admin/config/search/redirect/import'] = array(
     'title' => 'Import',
-    'description' => 'Import from CSV file',
+    'description' => 'Import redirects from file',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('path_redirect_import_form'),
     'access arguments' => array('administer redirects'),
@@ -27,20 +27,16 @@ function path_redirect_import_form() {
   $form = array();
   $form['csv'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Import from .csv file'),
+    '#title' => t('Import from .csv or .txt file'),
     '#description' => t('To import redirects, you must create a CSV or TXT.'),
   );
 
   $form['csv']['delimiter'] = array(
-    '#type' => 'select',
-    '#title' => t('Default delimiter'),
-    '#description' => t('Default field delimiter.'),
-    '#options' => array(
-      ',' => ',',
-      ';' => ';',
-      '#' => '#',
-      '|' => '|',
-    ),
+    '#type' => 'textfield',
+    '#title' => t('Delimiter'),
+    '#description' => t('Add your delimiter.'),
+    '#default_value' => ',',
+    '#maxlength' => 2,
   );
   $form['csv']['no_headers'] = array(
     '#type' => 'checkbox',
@@ -52,6 +48,21 @@ function path_redirect_import_form() {
     '#type' => 'file',
     '#description' => t('The CSV file must include columns in the following order: "From URL","To URL","Redirect Code" (defaults to 301)'),
   );
+
+  $form['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced options'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['advanced']['status_code'] = array(
+    '#type' => 'select',
+    '#title' => t('Redirect status'),
+    '#description' => t('You can find more information about HTTP redirect status codes at <a href="@status-codes">@status-codes</a>.', array('@status-codes' => 'http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_Redirection')),
+    '#default_value' => 301,
+    '#options' => redirect_status_code_options(),
+  );
+
   $form['submit'] = array('#type' => 'submit', '#value' => t('Import'));
   $form['#attributes'] = array('enctype' => "multipart/form-data");
   return $form;
@@ -99,7 +110,7 @@ function path_redirect_import_form_submit($form, &$form_state) {
       $error .= t('Line %line_no contains invalid data.', array('%line_no' => $line_no)) . '<br />';
     }
     if (empty($line[2])) {
-      $line[2] = '301';
+      $line[2] = $form_state['values']['status_code'];
     }
 
     $source_parts = redirect_parse_url($line[0]);
