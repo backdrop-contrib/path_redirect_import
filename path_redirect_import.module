@@ -44,6 +44,12 @@ function path_redirect_import_form() {
     '#description' => t('Check if the imported file does not start with a header row.'),
   );
 
+  $form['csv']['override'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Override sources'),
+      '#description' => t('Check to override stored redirects.'),
+  );
+
   $form['csv']['csv_file'] = array(
     '#type' => 'file',
     '#description' => t('The CSV file must include columns in the following order: "From URL","To URL","Redirect Code" (defaults to 301)'),
@@ -118,7 +124,11 @@ function path_redirect_import_form_submit($form, &$form_state) {
       'source' => $source_parts['url'],
       'redirect' => isset($line[1]) ? $line[1] : NULL,
       'state_code' => $line[2],
+      'override' => $form_state['values']['override'],
     );
+    if (!empty($source_parts['query'])) {
+      $data['source_options']['query'] = $source_parts['query'];
+    }
     if ($error == '') {
       if (!path_redirect_import_save_data($data)) {
         drupal_set_message(t('Inserting the data in the database has failed.'), 'error');
@@ -143,7 +153,6 @@ function path_redirect_import_form_submit($form, &$form_state) {
  */
 function path_redirect_import_save_data($data) {
   $redirect = (object) $data;
-  $redirect->override = 0;
   $redirect_path = $redirect->redirect;
   if ($redirect->redirect != '<front>') {
     $parts = redirect_parse_url($redirect->redirect);
@@ -172,7 +181,12 @@ function path_redirect_import_save_data($data) {
 
   redirect_object_prepare($redirect);
   redirect_hash($redirect);
-  if ($existing = redirect_load_by_hash($redirect->hash)) {
+  $existing = redirect_load_by_hash($redirect->hash);
+  if ($existing && $redirect->override) {
+    $rid = redirect_load_by_source($redirect->source, LANGUAGE_NONE, $redirect->source_options['query']);
+    $redirect->rid = $rid->rid;
+  }
+  if ($existing && !$redirect->override) {
     drupal_set_message(t('The source "@source" is already being redirected', array('@source' => $redirect->source)));
   }
   elseif (empty($redirect->redirect)) {
