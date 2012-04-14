@@ -45,9 +45,9 @@ function path_redirect_import_form() {
   );
 
   $form['csv']['override'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Override sources'),
-      '#description' => t('Check to override stored redirects.'),
+    '#type' => 'checkbox',
+    '#title' => t('Override sources'),
+    '#description' => t('Check to override stored redirects.'),
   );
 
   $form['csv']['csv_file'] = array(
@@ -167,7 +167,7 @@ function path_redirect_import_save_data($data) {
     }
 
     if (!url_is_external($parts['url'])) {
-      if (drupal_valid_path($parts['url'])) {
+      if (drupal_lookup_path('source', $parts['url']) || drupal_valid_path($parts['url'])) {
         $redirect->redirect = drupal_get_normal_path($parts['url'], LANGUAGE_NONE);
       }
       else {
