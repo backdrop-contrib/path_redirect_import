@@ -41,7 +41,8 @@ function path_redirect_import_form() {
   $form['csv']['no_headers'] = array(
     '#type' => 'checkbox',
     '#title' => t('No headers'),
-    '#description' => t('Check if the imported file does not start with a header row.'),
+    '#description' =>
+      t('Check if the imported file does not start with a header row.'),
   );
 
   $form['csv']['override'] = array(
@@ -52,7 +53,9 @@ function path_redirect_import_form() {
 
   $form['csv']['csv_file'] = array(
     '#type' => 'file',
-    '#description' => t('The CSV file must include columns in the following order: "From URL","To URL","Redirect Code" (defaults to 301)'),
+    '#description' =>
+      t('The CSV file must include columns in the following order: 
+      "From URL","To URL","Redirect Code" (defaults to 301)'),
   );
 
   $form['advanced'] = array(
@@ -64,7 +67,13 @@ function path_redirect_import_form() {
   $form['advanced']['status_code'] = array(
     '#type' => 'select',
     '#title' => t('Redirect status'),
-    '#description' => t('You can find more information about HTTP redirect status codes at <a href="@status-codes">@status-codes</a>.', array('@status-codes' => 'http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_Redirection')),
+    '#description' =>
+      t('You can find more information about HTTP redirect status codes at 
+      <a href="@status-codes">@status-codes</a>.',
+      array('@status-codes' =>
+        'http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_Redirection',
+      ),
+    ),
     '#default_value' => 301,
     '#options' => redirect_status_code_options(),
   );
@@ -95,28 +104,56 @@ function path_redirect_import_form_submit($form, &$form_state) {
   if (!isset($form_state['uploaded_file'])) {
     return;
   }
-  if (!$f = fopen($form_state['uploaded_file']->uri, 'r')) {
-    form_set_error('form', t("Could not open uploaded file."));
+  $result = path_redirect_import_read_file(
+    $form_state['uploaded_file']->uri, $form_state['values']);
+  if ($result['success']) {
+    drupal_set_message(implode('<br />', $result['message']));
+  }
+  else {
+    drupal_set_message(implode('<br />', $result['message']), 'error');
+  }
+
+  file_delete($form_state['uploaded_file']);
+}
+
+/**
+ * Function that processes the file
+ */
+function path_redirect_import_read_file($file, $options = array()) {
+  $defaults = array(
+    'delimiter' => ',',
+    'no_headers' => TRUE,
+    'override' => FALSE,
+    'status_code' => '301',
+  );
+  foreach ($defaults as $key => $value) {
+    if (!isset($options[$key])) {
+      $options[$key] = $value;
+    }
+  }
+  if (!$f = fopen($file, 'r')) {
   }
   $line_no = 0;
   $count = 0;
+  $message = '';
+  $success = FALSE;
 
-  $delimiter = $form_state['values']['delimiter'];
-  while ($line = fgetcsv($f, 1024, $delimiter)) {
+  while ($line = fgetcsv($f, 1024, $options['delimiter'])) {
+    $error = '';
     $line_no++;
-    if ($line_no == 1 && !$form_state['values']['no_headers']) {
+    if ($line_no == 1 && !$options['no_headers']) {
       continue;
     }
 
     $error = '';
     if (!is_array($line)) {
-      $error .= t('Line %line_no is invalid.', array('%line_no' => $line_no)) . '<br />';
+      $error = t('Line @line_no is invalid.', array('@line_no' => $line_no));
     }
     if (empty($line[0]) || empty($line[1])) {
-      $error .= t('Line %line_no contains invalid data.', array('%line_no' => $line_no)) . '<br />';
+      $error = t('Line @line_no contains invalid data.', array('@line_no' => $line_no));
     }
     if (empty($line[2])) {
-      $line[2] = $form_state['values']['status_code'];
+      $line[2] = $optoins['status_code'];
     }
 
     $source_parts = redirect_parse_url($line[0]);
@@ -124,28 +161,29 @@ function path_redirect_import_form_submit($form, &$form_state) {
       'source' => $source_parts['url'],
       'redirect' => isset($line[1]) ? $line[1] : NULL,
       'state_code' => $line[2],
-      'override' => $form_state['values']['override'],
+      'override' => $options['override'],
     );
     if (!empty($source_parts['query'])) {
       $data['source_options']['query'] = $source_parts['query'];
     }
     if ($error == '') {
       if (!path_redirect_import_save_data($data)) {
-        drupal_set_message(t('Inserting the data in the database has failed.'), 'error');
+        $message[] = filter_xss(t('Inserting @line_no in the database has failed.', array('@line_no' => $line_no)));
       }
       else {
         $count++;
       }
     }
     else {
-      drupal_set_message(filter_xss($error), 'error');
+      $message[] = filter_xss($error);
     }
   }
   fclose($f);
-  file_delete($form_state['uploaded_file']);
   if ($count > 0) {
-    drupal_set_message(t('%count row(s) imported.', array('%count' => $count)), 'message');
+    $message[] = t('@count row(s) imported.', array('@count' => $count));
+    $success = TRUE;
   }
+  return array('success' => $success, 'message' => $message);
 }
 
 /**
