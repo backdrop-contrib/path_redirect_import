@@ -72,7 +72,7 @@ function path_redirect_import_form() {
       <a href="@status-codes">@status-codes</a>.',
       array('@status-codes' =>
         'http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_Redirection',
-      ),
+      )
     ),
     '#default_value' => 301,
     '#options' => redirect_status_code_options(),
