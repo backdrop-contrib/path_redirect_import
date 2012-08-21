@@ -77,6 +77,13 @@ function path_redirect_import_form() {
     '#default_value' => 301,
     '#options' => redirect_status_code_options(),
   );
+  $form['advanced']['language'] = array(
+    '#type' => 'select',
+    '#title' => t('Redirect language'),
+    '#description' => t('A redirect set for a specific language will always be used when requesting this page in that language, and takes precedence over redirects set for <em>All languages</em>.'),
+    '#default_value' => LANGUAGE_NONE,
+    '#options' => array(LANGUAGE_NONE => t('All languages')) + locale_language_list('name'),
+  );
 
   $form['submit'] = array('#type' => 'submit', '#value' => t('Import'));
   $form['#attributes'] = array('enctype' => "multipart/form-data");
@@ -125,6 +132,7 @@ function path_redirect_import_read_file($file, $options = array()) {
     'no_headers' => TRUE,
     'override' => FALSE,
     'status_code' => '301',
+    'language' => LANGUAGE_NONE,
   );
   foreach ($defaults as $key => $value) {
     if (!isset($options[$key])) {
@@ -151,17 +159,22 @@ function path_redirect_import_read_file($file, $options = array()) {
     }
     if (empty($line[0]) || empty($line[1])) {
       $error = t('Line @line_no contains invalid data.', array('@line_no' => $line_no));
+      continue;
     }
     if (empty($line[2])) {
-      $line[2] = $optoins['status_code'];
+      $line[2] = $options['status_code'];
+    }
+    if (empty($line[3])) {
+      $line[3] = $options['language'];
     }
 
     $source_parts = redirect_parse_url($line[0]);
     $data = array(
       'source' => $source_parts['url'],
       'redirect' => isset($line[1]) ? $line[1] : NULL,
-      'state_code' => $line[2],
+      'status_code' => $line[2],
       'override' => $options['override'],
+      'language' => $line[3],
     );
     if (!empty($source_parts['query'])) {
       $data['source_options']['query'] = $source_parts['query'];
@@ -206,7 +219,7 @@ function path_redirect_import_save_data($data) {
 
     if (!url_is_external($parts['url'])) {
       if (drupal_lookup_path('source', $parts['url']) || drupal_valid_path($parts['url'])) {
-        $redirect->redirect = drupal_get_normal_path($parts['url'], LANGUAGE_NONE);
+        $redirect->redirect = drupal_get_normal_path($parts['url'], $data->language);
       }
       else {
         $redirect->redirect = FALSE;
@@ -221,7 +234,7 @@ function path_redirect_import_save_data($data) {
   redirect_hash($redirect);
   $existing = redirect_load_by_hash($redirect->hash);
   if ($existing && $redirect->override) {
-    $rid = redirect_load_by_source($redirect->source, LANGUAGE_NONE, $redirect->source_options['query']);
+    $rid = redirect_load_by_source($redirect->source, $redirect->language, $redirect->source_options['query']);
     $redirect->rid = $rid->rid;
   }
   if ($existing && !$redirect->override) {
