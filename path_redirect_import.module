@@ -219,7 +219,7 @@ function path_redirect_import_save_data($data) {
 
     if (!url_is_external($parts['url'])) {
       if (drupal_lookup_path('source', $parts['url']) || drupal_valid_path($parts['url'])) {
-        $redirect->redirect = drupal_get_normal_path($parts['url'], $data->language);
+        $redirect->redirect = drupal_get_normal_path($parts['url'], $redirect->language);
       }
       else {
         $redirect->redirect = FALSE;
@@ -234,7 +234,8 @@ function path_redirect_import_save_data($data) {
   redirect_hash($redirect);
   $existing = redirect_load_by_hash($redirect->hash);
   if ($existing && $redirect->override) {
-    $rid = redirect_load_by_source($redirect->source, $redirect->language, $redirect->source_options['query']);
+    $query = isset($redirect->redirect_options['query']) ? $redirect->redirect_options['query'] : array();
+    $rid = redirect_load_by_source($redirect->source, $redirect->language, $query);
     $redirect->rid = $rid->rid;
   }
   if ($existing && !$redirect->override) {
