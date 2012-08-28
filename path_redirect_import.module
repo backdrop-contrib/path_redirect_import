@@ -77,13 +77,15 @@ function path_redirect_import_form() {
     '#default_value' => 301,
     '#options' => redirect_status_code_options(),
   );
-  $form['advanced']['language'] = array(
-    '#type' => 'select',
-    '#title' => t('Redirect language'),
-    '#description' => t('A redirect set for a specific language will always be used when requesting this page in that language, and takes precedence over redirects set for <em>All languages</em>.'),
-    '#default_value' => LANGUAGE_NONE,
-    '#options' => array(LANGUAGE_NONE => t('All languages')) + locale_language_list('name'),
-  );
+  if (module_exists('locale')) {
+    $form['advanced']['language'] = array(
+      '#type' => 'select',
+      '#title' => t('Redirect language'),
+      '#description' => t('A redirect set for a specific language will always be used when requesting this page in that language, and takes precedence over redirects set for <em>All languages</em>.'),
+      '#default_value' => LANGUAGE_NONE,
+      '#options' => array(LANGUAGE_NONE => t('All languages')) + locale_language_list('name'),
+    );
+  }
 
   $form['submit'] = array('#type' => 'submit', '#value' => t('Import'));
   $form['#attributes'] = array('enctype' => "multipart/form-data");
@@ -140,6 +142,7 @@ function path_redirect_import_read_file($file, $options = array()) {
     }
   }
   if (!$f = fopen($file, 'r')) {
+    return array('success' => FALSE, 'message' => array(t('Unable to read the file')));
   }
   $line_no = 0;
   $count = 0;
@@ -155,40 +158,53 @@ function path_redirect_import_read_file($file, $options = array()) {
 
     $error = '';
     if (!is_array($line)) {
-      $error = t('Line @line_no is invalid.', array('@line_no' => $line_no));
+      $message[] = t('Line @line_no is invalid.', array('@line_no' => $line_no));
+      continue;
     }
     if (empty($line[0]) || empty($line[1])) {
-      $error = t('Line @line_no contains invalid data.', array('@line_no' => $line_no));
+      $message[] = t('Line @line_no contains invalid data.', array('@line_no' => $line_no));
       continue;
     }
     if (empty($line[2])) {
       $line[2] = $options['status_code'];
     }
-    if (empty($line[3])) {
-      $line[3] = $options['language'];
+    else {
+      $redirect_options = redirect_status_code_options();
+      if (!isset($redirect_options[$line[2]])) {
+        $message[] = t('Line @line_no contains invalid status code', array('@line_no' => $line_no));
+        continue;
+      }
     }
-
+    if (module_exists('locale')) {
+      if (empty($line[3])) {
+        $line[3] = $options['language'];
+      }
+      else {
+        $language_options = locale_language_list('name');
+        if (!isset($language_options[$line[3]])) {
+          $message[] = t('Line @line_no contains invalid language code', array('@line_no' => $line_no));
+          continue;
+        }
+      }
+    }
     $source_parts = redirect_parse_url($line[0]);
     $data = array(
       'source' => $source_parts['url'],
       'redirect' => isset($line[1]) ? $line[1] : NULL,
       'status_code' => $line[2],
       'override' => $options['override'],
-      'language' => $line[3],
+      'language' => isset($line[3]) ? $line[3] : LANGUAGE_NONE,
     );
     if (!empty($source_parts['query'])) {
       $data['source_options']['query'] = $source_parts['query'];
     }
     if ($error == '') {
       if (!path_redirect_import_save_data($data)) {
-        $message[] = filter_xss(t('Inserting @line_no in the database has failed.', array('@line_no' => $line_no)));
+        $message[] = t('Inserting @line_no in the database has failed.', array('@line_no' => $line_no));
       }
       else {
         $count++;
       }
-    }
-    else {
-      $message[] = filter_xss($error);
     }
   }
   fclose($f);
@@ -207,9 +223,6 @@ function path_redirect_import_save_data($data) {
   $redirect_path = $redirect->redirect;
   if ($redirect->redirect != '<front>') {
     $parts = redirect_parse_url($redirect->redirect);
-    if (!empty($parts['fragment'])) {
-      $redirect->redirect_options['fragment'] = $parts['fragment'];
-    }
     if (!empty($parts['query'])) {
       $redirect->redirect_options['query'] = $parts['query'];
     }
@@ -234,7 +247,7 @@ function path_redirect_import_save_data($data) {
   redirect_hash($redirect);
   $existing = redirect_load_by_hash($redirect->hash);
   if ($existing && $redirect->override) {
-    $query = isset($redirect->redirect_options['query']) ? $redirect->redirect_options['query'] : array();
+    $query = isset($redirect->source_options['query']) ? $redirect->source_options['query'] : array();
     $rid = redirect_load_by_source($redirect->source, $redirect->language, $query);
     $redirect->rid = $rid->rid;
   }

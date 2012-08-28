@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * @file
+ * File that holds functional tests for Path Redirect Import module
+ */
+
+class PathRedirectImportTest extends DrupalWebTestCase {
+  /**
+   * The getInfo() method provides information about the test.
+   * In order for the test to be run, the getInfo() method needs
+   * to be implemented.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Path Redirect Import Basic'),
+      'description' => t('Tests basic module functionality.'),
+      'group' => 'Path Redirect Import',
+    );
+  }
+
+  /**
+   * Prepares the testing environment
+   */
+  function setUp() {
+    // Enable minimum required modules.
+    parent::setUp('redirect', 'path_redirect_import');
+    // Create user.
+    $this->privileged_user = $this->drupalCreateUser(array(
+      'administer nodes',
+      'create page content',
+      'administer redirects',
+    ));
+
+    $this->drupalLogin($this->privileged_user);
+
+    // Create dummy node.
+    $title = $this->randomName(8);
+    $edit = array(
+      'title' => $title,
+    );
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+  }
+
+  /**
+   * Performs the basic tests
+   */
+  public function testReadRedirectFile() {
+    // Check the most basic redirection case.
+    path_redirect_import_read_file(drupal_get_path('module', 'path_redirect_import') . '/tests/test.csv');
+    $this->drupalGet('admin/config/search/redirect/list');
+    $this->assertRaw('<td><a href="/test1">test1</a></td><td><a href="/node/1">node/1</a></td><td>301</td>', t('First line imported'));
+    $this->assertRaw('<td><a href="/test2?drupal=god">test2?drupal=god</a></td><td><a href="http://drupal.org">http://drupal.org</a></td><td>301</td>', t('Second line imported'));
+    $this->assertRaw('<td><a href="/test3?redirect=true">test3?redirect=true</a></td><td><a href="/">&lt;front&gt;</a></td><td>301</td>', t('Third line imported'));
+
+    // Check default values overriden and default status_code.
+    path_redirect_import_read_file(drupal_get_path('module', 'path_redirect_import') . '/tests/test_redirect.csv', array('override' => TRUE, 'status_code' => 302));
+    $this->drupalGet('admin/config/search/redirect/list');
+    $this->assertRaw('<td><a href="/test1">test1</a></td><td><a href="/">&lt;front&gt;</a></td><td>302</td>', t('First line overrode'));
+    $this->assertRaw('<td><a href="/test2?drupal=god">test2?drupal=god</a></td><td><a href="http://drupal.org/project/path_redirect_import">http://drupal.org/project/path_redirect_import</a></td><td>302</td>', t('Second line overrode'));
+    $this->assertRaw('<td><a href="/test3?redirect=true">test3?redirect=true</a></td><td><a href="/node/1">node/1</a></td><td>302</td>', t('Third line overrode'));
+
+    // Check status code values validation.
+    path_redirect_import_read_file(drupal_get_path('module', 'path_redirect_import') . '/tests/test_status.csv', array('override' => TRUE, 'status_code' => 300));
+    $this->drupalGet('admin/config/search/redirect/list');
+    $this->assertRaw('<td><a href="/test1">test1</a></td><td><a href="/node/1">node/1</a></td><td>303</td>', t('First line overrode'));
+    $this->assertRaw('<td><a href="/test2?drupal=god">test2?drupal=god</a></td><td><a href="http://drupal.org/project/path_redirect_import">http://drupal.org/project/path_redirect_import</a></td><td>302</td>', t('Second line skipped'));
+    $this->assertRaw('<td><a href="/test3?redirect=true">test3?redirect=true</a></td><td><a href="/">&lt;front&gt;</a></td><td>304</td>', t('Third line overrode'));
+  }
+}
