@@ -199,8 +199,9 @@ function path_redirect_import_read_file($file, $options = array()) {
       $data['source_options']['query'] = $source_parts['query'];
     }
     if ($error == '') {
-      if (!path_redirect_import_save_data($data)) {
-        $message[] = t('Inserting @line_no in the database has failed.', array('@line_no' => $line_no));
+      $insert_row = path_redirect_import_save_data($data);
+      if (!$insert_row['success']) {
+        $message[] = $insert_row['message'];
       }
       else {
         $count++;
@@ -220,7 +221,6 @@ function path_redirect_import_read_file($file, $options = array()) {
  */
 function path_redirect_import_save_data($data) {
   $redirect = (object) $data;
-  $redirect_path = $redirect->redirect;
   if ($redirect->redirect != '<front>') {
     $parts = redirect_parse_url($redirect->redirect);
     if (!empty($parts['query'])) {
@@ -252,13 +252,19 @@ function path_redirect_import_save_data($data) {
     $redirect->rid = $rid->rid;
   }
   if ($existing && !$redirect->override) {
-    drupal_set_message(t('The source "@source" is already being redirected', array('@source' => $redirect->source)));
+    return array(
+      'success' => FALSE,
+      'message' => filter_xss(t('The source "@source" is already being redirected', array('@source' => $redirect->source))),
+    );
   }
   elseif (empty($redirect->redirect)) {
-    drupal_set_message(t('The destination "@dest" URL/path does not exist', array('@dest' => $redirect_path)));
+    return array(
+      'success' => FALSE,
+      'message' => filter_xss(t('The destination "@dest" URL/path does not exist', array('@dest' => $redirect->rediect))),
+    );
   }
   else {
     redirect_save($redirect);
   }
-  return TRUE;
+  return array('success' => TRUE);
 }
