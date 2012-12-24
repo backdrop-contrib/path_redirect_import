@@ -153,6 +153,7 @@ function path_redirect_import_read_file($file, $options = array()) {
     $error = '';
     $line_no++;
     if ($line_no == 1 && !$options['no_headers']) {
+      drupal_set_message(t('Skipping the header row.'));
       continue;
     }
 
@@ -189,6 +190,7 @@ function path_redirect_import_read_file($file, $options = array()) {
     }
     $source_parts = redirect_parse_url($line[0]);
     $data = array(
+      'line_no' => $line_no,
       'source' => $source_parts['url'],
       'redirect' => isset($line[1]) ? $line[1] : NULL,
       'status_code' => $line[2],
@@ -254,13 +256,19 @@ function path_redirect_import_save_data($data) {
   if ($existing && !$redirect->override) {
     return array(
       'success' => FALSE,
-      'message' => filter_xss(t('The source "@source" is already being redirected', array('@source' => $redirect->source))),
+      'message' => filter_xss(t('Line @line_no: The source "@source" is already being redirected.', array(
+        '@line_no' => $data['line_no'],
+        '@source' => $data['source'],
+      ))),
     );
   }
   elseif (empty($redirect->redirect)) {
     return array(
       'success' => FALSE,
-      'message' => filter_xss(t('The destination "@dest" URL/path does not exist', array('@dest' => $redirect->rediect))),
+      'message' => filter_xss(t('Line @line_no: The destination "@dest" URL/path does not exist.', array(
+        '@line_no' => $data['line_no'],
+        '@dest' => $data['redirect'],
+      ))),
     );
   }
   else {
