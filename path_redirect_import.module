@@ -233,7 +233,7 @@ function path_redirect_import_save_data($data) {
     }
 
     if (!url_is_external($parts['url'])) {
-      if (drupal_lookup_path('source', $parts['url'], $redirect->language) || drupal_valid_path($parts['url'])) {
+      if (drupal_lookup_path('source', $parts['url'], $redirect->language) || drupal_valid_path($parts['url']) || is_file($parts['url'])) {
         $redirect->redirect = drupal_get_normal_path($parts['url'], $redirect->language);
       }
       else {
