@@ -17,6 +17,13 @@ function path_redirect_import_menu() {
     'access arguments' => array('administer redirects'),
     'type' => MENU_LOCAL_TASK,
   );
+  $items['admin/config/search/redirect/export'] = array(
+    'title' => 'Export',
+    'description' => 'Export redirects to a file',
+    'page callback' => 'path_redirect_import_export',
+    'access arguments' => array('administer redirects'),
+    'type' => MENU_LOCAL_TASK,
+  );
   return $items;
 }
 
@@ -275,4 +282,33 @@ function path_redirect_import_save_data($data) {
     redirect_save($redirect);
   }
   return array('success' => TRUE);
+}
+
+/**
+ * Dump current redirects for download as csv.
+ */
+function path_redirect_import_export() {
+  $efq = new EntityFieldQuery();
+  $result = $efq->entityCondition('entity_type', 'redirect')
+    ->entityCondition('bundle', 'redirect')
+    ->execute();
+  $redirects = $result['redirect'];
+
+  foreach ($redirects as $redirect) {
+    // Reset the cache so we won't exhaust memory.
+    $redirect = redirect_load($redirect->rid, TRUE);
+
+    echo '"' . $redirect->source . '","' . $redirect->redirect . '"';
+    if ($redirect->status_code) {
+      echo ',"' . $redirect->status_code . '"';
+    }
+    echo PHP_EOL;
+
+  }
+
+  drupal_add_http_header('Content-Type', 'text/csv');
+  drupal_add_http_header('Content-Disposition', 'attachment;filename=redirects.csv');
+
+  drupal_exit();
+
 }
