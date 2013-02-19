@@ -48,7 +48,7 @@ class PathRedirectImportTest extends DrupalWebTestCase {
   public function testReadRedirectFile() {
     // Check the most basic redirection case.
     $result = path_redirect_import_read_file(drupal_get_path('module', 'path_redirect_import') . '/tests/test.csv');
-    $this->assertEqual(end($result['message']), t('@count row(s) imported', array('@count' => 3), t('3 rows imported')));
+    $this->assertEqual(end($result['message']), t('@count row(s) imported.', array('@count' => 3)));
     $this->drupalGet('admin/config/search/redirect/list');
     $this->assertRaw('<td><a href="/test1">test1</a></td><td><a href="/node/1">node/1</a></td><td>301</td>', t('First line imported'));
     $this->assertRaw('<td><a href="/test2?drupal=god">test2?drupal=god</a></td><td><a href="http://drupal.org">http://drupal.org</a></td><td>301</td>', t('Second line imported'));
@@ -123,7 +123,7 @@ class PathRedirectImportLanguageTest extends DrupalWebTestCase {
   public function testReadRedirectLanguageFile() {
     // Check the most basic redirection case.
     $result = path_redirect_import_read_file(drupal_get_path('module', 'path_redirect_import') . '/tests/language_test.csv');
-    $this->assertEqual(end($result['message']), t('@count row(s) imported', array('@count' => 3), t('3 rows imported')));
+    $this->assertEqual(end($result['message']), t('@count row(s) imported.', array('@count' => 3)));
     $this->drupalGet('admin/config/search/redirect/list');
     $this->assertRaw('<td><a href="/test1">test1</a></td><td><a href="/node/1">node/1</a></td><td>302</td><td>Spanish</td>', t('First line imported'));
     $this->assertRaw('<td><a href="/test2?drupal=god">test2?drupal=god</a></td><td><a href="http://drupal.org">http://drupal.org</a></td><td>301</td><td>All</td>', t('Second line imported'));
