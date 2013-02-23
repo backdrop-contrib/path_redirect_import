@@ -21,7 +21,8 @@ function path_redirect_import_menu() {
   $items['admin/config/search/redirect/export'] = array(
     'title' => 'Export',
     'description' => 'Export redirects to a file',
-    'page callback' => 'path_redirect_import_export',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('path_redirect_import_export_form'),
     'access arguments' => array('administer redirects'),
     'file' => 'path_redirect_import.admin.inc',
     'type' => MENU_LOCAL_TASK,
@@ -181,3 +182,30 @@ function path_redirect_import_save_data($data) {
   return array('success' => TRUE);
 }
 
+/**
+ * Generates and sends CSV file with redirects
+ */
+function path_redirect_import_export_redirects($redirects) {
+  $fp = fopen('php://output', 'w');
+  foreach ($redirects as $redirect) {
+    // Reset the cache so we won't exhaust memory.
+    $redirect = redirect_load($redirect->rid, TRUE);
+    $line = array($redirect->source, $redirect->redirect);
+    if ($redirect->status_code) {
+      $line[] = $redirect->status_code;
+    }
+    if ($redirect->language != LANGUAGE_NONE) {
+      if (count($line) == 2) {
+        $line[] = '';
+      }
+      $line[] = $redirect->language;
+    }
+    fputcsv($fp, $line);
+  }
+  fclose($fp);
+
+  drupal_add_http_header('Content-Type', 'text/csv');
+  drupal_add_http_header('Content-Disposition', 'attachment;filename=redirects.csv');
+
+  drupal_exit();
+}

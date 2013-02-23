@@ -110,10 +110,27 @@ function path_redirect_import_form_submit($form, &$form_state) {
   file_delete($form_state['uploaded_file']);
 }
 
+
+/**
+ * Export redirects page form
+ */
+function path_redirect_import_export_form() {
+  $form['markup'] = array(
+    '#type' => 'item',
+    '#markup' => t('You can export all your redirects in path_redirect_import format'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Export redirects'),
+  );
+
+  return $form;
+}
 /**
  * Dump current redirects for download as csv.
  */
-function path_redirect_import_export() {
+function path_redirect_import_export_form_submit($form, &$form_state) {
   $efq = new EntityFieldQuery();
   $result = $efq->entityCondition('entity_type', 'redirect')
     ->entityCondition('bundle', 'redirect')
@@ -122,24 +139,10 @@ function path_redirect_import_export() {
   $redirects = $result['redirect'];
 
   if ($redirects) {
-    $fp = fopen('php://output', 'w');
-    foreach ($redirects as $redirect) {
-      // Reset the cache so we won't exhaust memory.
-      $redirect = redirect_load($redirect->rid, TRUE);
-      $line= array($redirect->source, $redirect->redirect);
-      if ($redirect->status_code) {
-        $line[] = $redirect->status_code;
-      }
-      fputcsv($fp, $line);
-    }
-    fclose($fp);
-
-    drupal_add_http_header('Content-Type', 'text/csv');
-    drupal_add_http_header('Content-Disposition', 'attachment;filename=redirects.csv');
-
-    drupal_exit();
+    path_redirect_import_export_redirects($redirects);
   }
   else {
-    return t('Sorry, no redirects to export available at this moment');
+    drupal_set_message('Sorry, no redirects to export available at this moment');
   }
 }
+
