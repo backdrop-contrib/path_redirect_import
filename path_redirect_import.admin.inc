@@ -136,10 +136,8 @@ function path_redirect_import_export_form_submit($form, &$form_state) {
     ->entityCondition('bundle', 'redirect')
     ->execute();
 
-  $redirects = $result['redirect'];
-
-  if ($redirects) {
-    path_redirect_import_export_redirects($redirects);
+  if (isset($result['redirect'])) {
+    path_redirect_import_export_redirects($result['redirect']);
   }
   else {
     drupal_set_message('Sorry, no redirects to export available at this moment');

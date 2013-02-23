@@ -190,7 +190,17 @@ function path_redirect_import_export_redirects($redirects) {
   foreach ($redirects as $redirect) {
     // Reset the cache so we won't exhaust memory.
     $redirect = redirect_load($redirect->rid, TRUE);
-    $line = array($redirect->source, $redirect->redirect);
+    $source = $redirect->source;
+    $redirect_url = $redirect->redirect;
+
+    if (isset($redirect->source_options['query'])) {
+      $source .= '?' . drupal_http_build_query($redirect->source_options['query']);
+    }
+    if (empty($redirect_url)) {
+      $redirect_url = '<front>';
+    }
+
+    $line = array($source, $redirect_url);
     if ($redirect->status_code) {
       $line[] = $redirect->status_code;
     }
