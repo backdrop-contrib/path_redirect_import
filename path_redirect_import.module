@@ -55,14 +55,13 @@ function path_redirect_import_read_file($file, $options = array()) {
   $success = FALSE;
 
   while ($line = fgetcsv($f, 1024, $options['delimiter'])) {
-    $error = '';
+    $message = array();
     $line_no++;
     if ($line_no == 1 && !$options['no_headers']) {
       drupal_set_message(t('Skipping the header row.'));
       continue;
     }
 
-    $error = '';
     if (!is_array($line)) {
       $message[] = t('Line @line_no is invalid.', array('@line_no' => $line_no));
       continue;
@@ -105,7 +104,7 @@ function path_redirect_import_read_file($file, $options = array()) {
     if (!empty($source_parts['query'])) {
       $data['source_options']['query'] = $source_parts['query'];
     }
-    if ($error == '') {
+    if (empty($message)) {
       $insert_row = path_redirect_import_save_data($data);
       if (!$insert_row['success']) {
         $message[] = $insert_row['message'];
