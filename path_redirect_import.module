@@ -54,7 +54,7 @@ function path_redirect_import_read_file($file, $options = array()) {
   $message = '';
   $success = FALSE;
 
-  while ($line = fgetcsv($f, 1024, $options['delimiter'])) {
+  while ($line = fgetcsv($f, 0, $options['delimiter'])) {
     $message = array();
     $line_no++;
     if ($line_no == 1 && !$options['no_headers']) {
