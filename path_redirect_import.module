@@ -51,7 +51,7 @@ function path_redirect_import_read_file($file, $options = array()) {
   }
   $line_no = 0;
   $count = 0;
-  $message = '';
+  $messages = array();
   $success = FALSE;
 
   while ($line = fgetcsv($f, 0, $options['delimiter'])) {
@@ -63,11 +63,11 @@ function path_redirect_import_read_file($file, $options = array()) {
     }
 
     if (!is_array($line)) {
-      $message[] = t('Line @line_no is invalid.', array('@line_no' => $line_no));
+      $messages[] = t('Line @line_no is invalid.', array('@line_no' => $line_no));
       continue;
     }
     if (empty($line[0]) || empty($line[1])) {
-      $message[] = t('Line @line_no contains invalid data.', array('@line_no' => $line_no));
+      $messages[] = t('Line @line_no contains invalid data.', array('@line_no' => $line_no));
       continue;
     }
     if (empty($line[2])) {
@@ -76,7 +76,7 @@ function path_redirect_import_read_file($file, $options = array()) {
     else {
       $redirect_options = redirect_status_code_options();
       if (!isset($redirect_options[$line[2]])) {
-        $message[] = t('Line @line_no contains invalid status code', array('@line_no' => $line_no));
+        $messages[] = t('Line @line_no contains invalid status code', array('@line_no' => $line_no));
         continue;
       }
     }
@@ -87,7 +87,7 @@ function path_redirect_import_read_file($file, $options = array()) {
       else {
         $language_options = locale_language_list('name');
         if (!isset($language_options[$line[3]])) {
-          $message[] = t('Line @line_no contains invalid language code', array('@line_no' => $line_no));
+          $messages[] = t('Line @line_no contains invalid language code', array('@line_no' => $line_no));
           continue;
         }
       }
@@ -104,22 +104,21 @@ function path_redirect_import_read_file($file, $options = array()) {
     if (!empty($source_parts['query'])) {
       $data['source_options']['query'] = $source_parts['query'];
     }
-    if (empty($message)) {
-      $insert_row = path_redirect_import_save_data($data);
-      if (!$insert_row['success']) {
-        $message[] = $insert_row['message'];
-      }
-      else {
-        $count++;
-      }
+
+    $insert_row = path_redirect_import_save_data($data);
+    if (!$insert_row['success']) {
+      $messages[] = $insert_row['message'];
+    }
+    else {
+      $count++;
     }
   }
   fclose($f);
   if ($count > 0) {
-    $message[] = t('@count row(s) imported.', array('@count' => $count));
+    $messages[] = t('@count row(s) imported.', array('@count' => $count));
     $success = TRUE;
   }
-  return array('success' => $success, 'message' => $message);
+  return array('success' => $success, 'message' => $messages);
 }
 
 /**
