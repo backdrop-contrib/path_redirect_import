@@ -48,6 +48,11 @@ class PathRedirectImportTest extends DrupalWebTestCase {
   public function testReadRedirectFile() {
     // Check the most basic redirection case.
     $result = path_redirect_import_read_file(drupal_get_path('module', 'path_redirect_import') . '/tests/test.csv');
+    $this->assertEqual(reset($result['message']), t('Line @line_no contains invalid data.', array('@line_no' => 4)));
+    $this->assertEqual($result['message'][1], t('Line @line_no: The destination "@dest" URL/path does not exist.', array(
+      '@line_no' => 5,
+      '@dest' => 'false_path',
+    )));
     $this->assertEqual(end($result['message']), t('@count row(s) imported.', array('@count' => 3)));
     $this->drupalGet('admin/config/search/redirect/list');
     $this->assertRaw('<td><a href="/test1">test1</a></td><td><a href="/node/1">node/1</a></td><td>301</td>', t('First line imported'));
