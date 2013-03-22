@@ -34,18 +34,14 @@ function path_redirect_import_menu() {
  * Function that processes the file
  */
 function path_redirect_import_read_file($file, $options = array()) {
-  $defaults = array(
+  $options += array(
     'delimiter' => ',',
     'no_headers' => TRUE,
     'override' => FALSE,
     'status_code' => '301',
     'language' => LANGUAGE_NONE,
   );
-  foreach ($defaults as $key => $value) {
-    if (!isset($options[$key])) {
-      $options[$key] = $value;
-    }
-  }
+
   if (!$f = fopen($file, 'r')) {
     return array('success' => FALSE, 'message' => array(t('Unable to read the file')));
   }
