@@ -47,7 +47,7 @@ function drush_path_redirect_import($file) {
   }
 
   $options = array();
-  $option_values = array('no-headers', 'override', 'status-code');
+  $option_values = array('no-headers', 'override', 'status-code', 'delimiter');
   foreach ($option_values as $value) {
     if (drush_get_option($value)) {
       $options[$value] = drush_get_option($value);
