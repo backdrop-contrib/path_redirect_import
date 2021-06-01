@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Page and form to import drupal path redirects
@@ -39,7 +38,7 @@ function path_redirect_import_form() {
   $form['csv']['csv_file'] = array(
     '#type' => 'file',
     '#description' =>
-      t('The CSV file must include columns in the following order: 
+      t('The CSV file must include columns in the following order:
       "From URL","To URL","Redirect Status","Redirect Language". Defaults for status and language can be set in the advanced options.'),
   );
 
@@ -53,7 +52,7 @@ function path_redirect_import_form() {
     '#type' => 'select',
     '#title' => t('Redirect status'),
     '#description' =>
-      t('You can find more information about HTTP redirect status codes at 
+      t('You can find more information about HTTP redirect status codes at
       <a href="@status-codes">@status-codes</a>.',
       array('@status-codes' =>
         'http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#3xx_Redirection',
@@ -101,10 +100,10 @@ function path_redirect_import_form_submit($form, &$form_state) {
   $result = path_redirect_import_read_file(
     $form_state['uploaded_file']->uri, $form_state['values']);
   if ($result['success']) {
-    drupal_set_message(implode('<br />', $result['message']));
+    backdrop_set_message(implode('<br />', $result['message']));
   }
   else {
-    drupal_set_message(implode('<br />', $result['message']), 'error');
+    backdrop_set_message(implode('<br />', $result['message']), 'error');
   }
 
   file_delete($form_state['uploaded_file']);
@@ -140,7 +139,7 @@ function path_redirect_import_export_form_submit($form, &$form_state) {
     path_redirect_import_export_redirects($result['redirect']);
   }
   else {
-    drupal_set_message('Sorry, no redirects to export available at this moment');
+    backdrop_set_message('Sorry, no redirects to export available at this moment');
   }
 }
 

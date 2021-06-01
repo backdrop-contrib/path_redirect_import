@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  *   Drush commands for the pat_redirect_import module
