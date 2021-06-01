@@ -69,7 +69,7 @@ function path_redirect_import_form() {
     '#options' => redirect_status_code_options(),
   );
   if (module_exists('locale')) {
-    $form['advanced']['language'] = array(
+    $form['advanced']['langcode'] = array(
       '#type' => 'select',
       '#title' => t('Redirect language'),
       '#description' => t('A redirect set for a specific language will always be used when requesting this page in that language, and takes precedence over redirects set for <em>All languages</em>.'),
@@ -104,8 +104,8 @@ function path_redirect_import_form_submit($form, &$form_state) {
   if (!isset($form_state['uploaded_file'])) {
     return;
   }
-  $result = path_redirect_import_read_file(
-    $form_state['uploaded_file']->uri, $form_state['values']);
+  $uri = $form_state['uploaded_file']->uri;
+  $result = path_redirect_import_read_file($uri, $form_state['values']);
   if ($result['success']) {
     backdrop_set_message(implode('<br />', $result['message']));
   }
@@ -113,7 +113,7 @@ function path_redirect_import_form_submit($form, &$form_state) {
     backdrop_set_message(implode('<br />', $result['message']), 'error');
   }
 
-  file_delete($form_state['uploaded_file']);
+  file_delete($form_state['uploaded_file']->fid);
 }
 
 

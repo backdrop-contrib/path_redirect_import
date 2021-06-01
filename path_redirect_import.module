@@ -38,7 +38,7 @@ function path_redirect_import_read_file($file, $options = array()) {
     'no_headers' => TRUE,
     'override' => FALSE,
     'status_code' => '301',
-    'language' => LANGUAGE_NONE,
+    'langcode' => LANGUAGE_NONE,
   );
 
   if (!$f = fopen($file, 'r')) {
@@ -77,7 +77,7 @@ function path_redirect_import_read_file($file, $options = array()) {
     }
     if (module_exists('locale')) {
       if (empty($line[3])) {
-        $line[3] = $options['language'];
+        $line[3] = $options['langcode'];
       }
       else {
         $language_options = locale_language_list('name');
@@ -95,7 +95,7 @@ function path_redirect_import_read_file($file, $options = array()) {
       'status_code' => $line[2],
       'override' => $options['override'],
       'check_destination' => $options['check_destination'],
-      'language' => isset($line[3]) ? $line[3] : LANGUAGE_NONE,
+      'langcode' => isset($line[3]) ? $line[3] : LANGUAGE_NONE,
     );
     if (!empty($source_parts['query'])) {
       $data['source_options']['query'] = $source_parts['query'];
@@ -121,44 +121,43 @@ function path_redirect_import_read_file($file, $options = array()) {
  * Function for save data from .csv file into the database
  */
 function path_redirect_import_save_data($data) {
-  $redirect = (object) $data;
-  if ($redirect->redirect != '<front>') {
-    $parts = redirect_parse_url($redirect->redirect);
+  if ($data['redirect'] != '<front>') {
+    $parts = redirect_parse_url($data['redirect']);
     if (!empty($parts['query'])) {
-      $redirect->redirect_options['query'] = $parts['query'];
+      $data['redirect_options']['query'] = $parts['query'];
     }
     if (!empty($parts['scheme']) && $parts['scheme'] == 'https') {
-      $redirect->redirect_options['https'] = TRUE;
+      $data['redirect_options']['https'] = TRUE;
     }
     if (!empty($parts['fragment'])) {
-      $redirect->redirect_options['fragment'] = $parts['fragment'];
+      $data['redirect_options']['fragment'] = $parts['fragment'];
     }
 
     if (!url_is_external($parts['url'])) {
-      if (!$redirect->check_destination ||
-           ( backdrop_lookup_path('source', $parts['url'], $redirect->language) ||
+      if (!$data['check_destination'] ||
+           ( backdrop_lookup_path('source', $parts['url'], $data['langcode']) ||
              backdrop_lookup_path('source', $parts['url'])) ||
              backdrop_valid_path($parts['url']
            ) ||
            is_file($parts['url'])
          ) {
-        $redirect->redirect = backdrop_get_normal_path($parts['url'], $redirect->language);
+        $data['redirect'] = backdrop_get_normal_path($parts['url'], $data['langcode']);
       }
       else {
-        $redirect->redirect = FALSE;
+        $data['redirect'] = FALSE;
       }
     }
     else {
-      $redirect->redirect = $parts['url'];
+      $data['redirect'] = $parts['url'];
     }
   }
 
-  redirect_object_prepare($redirect);
+  $redirect = new Redirect($data);
   redirect_hash($redirect);
   $existing = redirect_load_by_hash($redirect->hash);
   if ($existing && $redirect->override) {
     $query = isset($redirect->source_options['query']) ? $redirect->source_options['query'] : array();
-    $rid = redirect_load_by_source($redirect->source, $redirect->language, $query, FALSE);
+    $rid = redirect_load_by_source($redirect->source, $redirect->langcode, $query, FALSE);
     $redirect->rid = $rid->rid;
   }
   if ($existing && !$redirect->override) {
@@ -207,11 +206,11 @@ function path_redirect_import_export_redirects($redirects) {
     if ($redirect->status_code) {
       $line[] = $redirect->status_code;
     }
-    if ($redirect->language != LANGUAGE_NONE) {
+    if ($redirect->langcode != LANGUAGE_NONE) {
       if (count($line) == 2) {
         $line[] = '';
       }
-      $line[] = $redirect->language;
+      $line[] = $redirect->langcode;
     }
     fputcsv($fp, $line);
   }
