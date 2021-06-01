@@ -130,6 +130,9 @@ function path_redirect_import_save_data($data) {
     if (!empty($parts['scheme']) && $parts['scheme'] == 'https') {
       $redirect->redirect_options['https'] = TRUE;
     }
+    if (!empty($parts['fragment'])) {
+      $redirect->redirect_options['fragment'] = $parts['fragment'];
+    }
 
     if (!url_is_external($parts['url'])) {
       if (!$redirect->check_destination ||
