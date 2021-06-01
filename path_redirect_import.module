@@ -131,7 +131,7 @@ function path_redirect_import_save_data($data) {
     }
 
     if (!url_is_external($parts['url'])) {
-      if (backdrop_lookup_path('source', $parts['url'], $redirect->language) || backdrop_valid_path($parts['url']) || is_file($parts['url'])) {
+      if ((backdrop_lookup_path('source', $parts['url'], $redirect->language) || backdrop_lookup_path('source', $parts['url'])) || backdrop_valid_path($parts['url']) || is_file($parts['url'])) {
         $redirect->redirect = backdrop_get_normal_path($parts['url'], $redirect->language);
       }
       else {
