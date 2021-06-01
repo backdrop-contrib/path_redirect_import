@@ -27,10 +27,12 @@ Installation
 - Install this module using the official Backdrop CMS instructions at
   https://backdropcms.org/guide/modules.
 
-- Visit the configuration page under Administration > Configuration > Category >
-  Foo (admin/config/category/foo) and enter the required information.
+- Visit the import page under Administration > Configuration > URL Handling >
+  URL Redirects > Import (admin/config/urls/redirect/import).
 
-- Any additional steps.
+- Visit the export page under Administration > Configuration > URL Handling >
+  URL Redirects > Export (admin/config/urls/redirect/export).
+
 
 Documentation
 -------------
