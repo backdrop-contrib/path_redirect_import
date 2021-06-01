@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Page and form to import drupal path redirects
+ * Page to import and export URL redirects.
  */
 
 /**
@@ -11,53 +11,57 @@ function path_redirect_import_form() {
   $form = array();
   $form['csv'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Import from .csv or .txt file'),
-    '#description' => t('To import redirects, you must create a CSV or TXT.'),
+    '#title' => t('Import URL Redirects from .csv or .txt file'),
   );
 
-  $form['csv']['delimiter'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Delimiter'),
-    '#description' => t('Add your delimiter.'),
-    '#default_value' => ',',
-    '#maxlength' => 2,
-  );
   $form['csv']['no_headers'] = array(
     '#type' => 'checkbox',
-    '#title' => t('No headers'),
-    '#description' =>
-      t('Check if the imported file does not start with a header row.'),
+    '#title' => t('The imported file does not start with a header row.'),
   );
 
-  $form['csv']['override'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Override sources'),
-    '#description' => t('Check to override stored redirects.'),
+  $items = array(
+    t('From URL (required)'),
+    t('To URL (required)'),
+    t('Redirect Status (optional -- set default below)'),
+    t('Redirect Language (optional -- set default below)'),
   );
 
-  $form['csv']['check_destination'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Check destination'),
-    '#description' => t('Uncheck this option to allow destination paths unknown to Drupal.'),
-    '#default_value' => 1,
-  );
+  $description = t('The CSV file must include columns in the following order:');
+  $description .= theme('item_list', array('items' => $items));
 
   $form['csv']['csv_file'] = array(
     '#type' => 'file',
-    '#description' =>
-      t('The CSV file must include columns in the following order:
-      "From URL","To URL","Redirect Status","Redirect Language". Defaults for status and language can be set in the advanced options.'),
+    '#description' => $description,
+  );
+  $form['csv']['delimiter'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Delimiter'),
+    '#default_value' => ',',
+    '#maxlength' => 2,
+    '#size' => 10,
+  );
+  $form['csv']['override'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Override existing redirects'),
+    '#description' => t('When unchecked, this option will prevent duplicate redirects.'),
+    '#default_value' => FALSE,
+  );
+  $form['csv']['check_destination'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Limit destinations to internal paths'),
+    '#description' => t('When unchecked, this option will allow destinations outside Backdrop.'),
+    '#default_value' => TRUE,
   );
 
   $form['advanced'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Advanced options'),
+    '#title' => t('Default values'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
   $form['advanced']['status_code'] = array(
     '#type' => 'select',
-    '#title' => t('Redirect status'),
+    '#title' => t('Default Redirect status'),
     '#description' =>
       t('You can find more information about HTTP redirect status codes at
       <a href="@status-codes">@status-codes</a>.',
@@ -68,18 +72,27 @@ function path_redirect_import_form() {
     '#default_value' => 301,
     '#options' => redirect_status_code_options(),
   );
+  $form['advanced']['langcode'] = array(
+    '#type' => 'select',
+    '#title' => t('Default Redirect language'),
+    '#description' => t('A redirect for a specific language will always be used when requesting this page in that language, and takes precedence over redirects for <em>All languages</em>.'),
+    '#default_value' => LANGUAGE_NONE,
+    '#options' => array(LANGUAGE_NONE => t('All languages')),
+  );
   if (module_exists('locale')) {
-    $form['advanced']['langcode'] = array(
-      '#type' => 'select',
-      '#title' => t('Redirect language'),
-      '#description' => t('A redirect set for a specific language will always be used when requesting this page in that language, and takes precedence over redirects set for <em>All languages</em>.'),
-      '#default_value' => LANGUAGE_NONE,
-      '#options' => array(LANGUAGE_NONE => t('All languages')) + locale_language_list('name'),
-    );
+    $form['advanced']['langcode']['#options'] = array(LANGUAGE_NONE => t('All languages')) + locale_language_list('name');
   }
 
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Import'));
+  $form['actions'] = array(
+    '#type' => 'actions',
+  );
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+  );
+
   $form['#attributes'] = array('enctype' => "multipart/form-data");
+
   return $form;
 }
 
@@ -126,24 +139,26 @@ function path_redirect_import_export_form() {
     '#markup' => t('You can export all your redirects in path_redirect_import format'),
   );
 
-  $form['submit'] = array(
+  $form['actions'] = array(
+    '#type' => 'actions',
+  );
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Export redirects'),
   );
 
   return $form;
 }
+
 /**
  * Dump current redirects for download as csv.
  */
 function path_redirect_import_export_form_submit($form, &$form_state) {
-  $efq = new EntityFieldQuery();
-  $result = $efq->entityCondition('entity_type', 'redirect')
-    ->entityCondition('bundle', 'redirect')
-    ->execute();
+  $query = "SELECT source, redirect, source_options, status_code, langcode FROM {redirect}";
+  $redirects = db_query($query)->fetchAll();
 
-  if (isset($result['redirect'])) {
-    path_redirect_import_export_redirects($result['redirect']);
+  if (!empty($redirects)) {
+    path_redirect_import_export_redirects($redirects);
   }
   else {
     backdrop_set_message('Sorry, no redirects to export available at this moment');

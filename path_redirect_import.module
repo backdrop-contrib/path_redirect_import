@@ -16,6 +16,7 @@ function path_redirect_import_menu() {
     'access arguments' => array('administer redirects'),
     'file' => 'path_redirect_import.admin.inc',
     'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
   );
   $items['admin/config/urls/redirect/export'] = array(
     'title' => 'Export',
@@ -25,6 +26,7 @@ function path_redirect_import_menu() {
     'access arguments' => array('administer redirects'),
     'file' => 'path_redirect_import.admin.inc',
     'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
   );
   return $items;
 }
@@ -159,6 +161,7 @@ function path_redirect_import_save_data($data) {
     $query = isset($redirect->source_options['query']) ? $redirect->source_options['query'] : array();
     $rid = redirect_load_by_source($redirect->source, $redirect->langcode, $query, FALSE);
     $redirect->rid = $rid->rid;
+    $redirect->is_new = FALSE;
   }
   if ($existing && !$redirect->override) {
     return array(
@@ -181,6 +184,7 @@ function path_redirect_import_save_data($data) {
   else {
     redirect_save($redirect);
   }
+
   return array('success' => TRUE);
 }
 
@@ -190,8 +194,6 @@ function path_redirect_import_save_data($data) {
 function path_redirect_import_export_redirects($redirects) {
   $fp = fopen('php://output', 'w');
   foreach ($redirects as $redirect) {
-    // Reset the cache so we won't exhaust memory.
-    $redirect = redirect_load($redirect->rid, TRUE);
     $source = $redirect->source;
     $redirect_url = $redirect->redirect;
 
