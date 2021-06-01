@@ -4,5 +4,11 @@ description = Provides the ability to import redirects for the Redirect module
 backdrop = 1.x
 dependencies[] = redirect
 
+tags[] = Administration
+tags[] = Drush
+tags[] = Path Management
+tags[] = SEO
+tags[] = Utility
+
 // @todo adapt tests
 files[] = tests/path_redirect_import.test

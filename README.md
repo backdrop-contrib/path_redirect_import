@@ -56,6 +56,7 @@ Credits
 -------
 
 - Ported to Backdrop CMS by [Jen Lampton](https://github.com/jenlampton).
+- Backdrop port sponsored by [BGP Site Solutions](https://www.bgpsitesolutions.com).
 - Drupal 7 module is maintained and supported by [plopesc](http://drupal.org/user/282415).
 - Drupal 6 original module was maintained and supported by [AG Prime](http://www.ag-prime.com).
 
