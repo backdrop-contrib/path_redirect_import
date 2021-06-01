@@ -94,6 +94,7 @@ function path_redirect_import_read_file($file, $options = array()) {
       'redirect' => isset($line[1]) ? $line[1] : NULL,
       'status_code' => $line[2],
       'override' => $options['override'],
+      'check_destination' => $options['check_destination'],
       'language' => isset($line[3]) ? $line[3] : LANGUAGE_NONE,
     );
     if (!empty($source_parts['query'])) {
@@ -131,7 +132,13 @@ function path_redirect_import_save_data($data) {
     }
 
     if (!url_is_external($parts['url'])) {
-      if ((backdrop_lookup_path('source', $parts['url'], $redirect->language) || backdrop_lookup_path('source', $parts['url'])) || backdrop_valid_path($parts['url']) || is_file($parts['url'])) {
+      if (!$redirect->check_destination ||
+           ( backdrop_lookup_path('source', $parts['url'], $redirect->language) ||
+             backdrop_lookup_path('source', $parts['url'])) ||
+             backdrop_valid_path($parts['url']
+           ) ||
+           is_file($parts['url'])
+         ) {
         $redirect->redirect = backdrop_get_normal_path($parts['url'], $redirect->language);
       }
       else {

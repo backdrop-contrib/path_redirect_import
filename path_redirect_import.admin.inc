@@ -35,6 +35,13 @@ function path_redirect_import_form() {
     '#description' => t('Check to override stored redirects.'),
   );
 
+  $form['csv']['check_destination'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Check destination'),
+    '#description' => t('Uncheck this option to allow destination paths unknown to Drupal.'),
+    '#default_value' => 1,
+  );
+
   $form['csv']['csv_file'] = array(
     '#type' => 'file',
     '#description' =>
